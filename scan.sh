@@ -3,6 +3,8 @@
 
 INPUT_FILE="sites_to_scan.txt"          # Файл с сайтами
 LIVE_SITES="live_sites.txt"     # Файл для живых сайтов
+JSON_FORMAT="json_sites.json"
+LIVE200="live_sites_200.txt" # Файл для живых сайтов with status code [200]
 OUTPUT_FILE="res.txt"    # Файл для результатов Nuclei
 LOG_FILE="scan_log.txt"         # Лог-файл для отслеживания процесса
 RATE_LIMIT=100
@@ -11,7 +13,7 @@ BULK_SIZE=50
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 check_dependencies() {
     echo -e "${YELLOW}[INFO] Проверка зависимостей...${NC}"
@@ -19,7 +21,7 @@ check_dependencies() {
         echo -e "${RED}[ERROR] Nuclei не установлен. Установите его: https://nuclei.projectdiscovery.io/${NC}"
         exit 1
     fi
-    if ! command -v /home/kali/go/bin/httpx &> /dev/null; then
+    if ! command -v /home/kali_gorkij/go/bin/httpx &> /dev/null; then
         echo -e "${RED}[ERROR] HTTPX не установлен. Установите его: https://github.com/projectdiscovery/httpx${NC}"
         exit 1
     fi
@@ -32,7 +34,11 @@ check_live_sites() {
         echo -e "${RED}[ERROR] Файл $INPUT_FILE не найден.${NC}"
         exit 1
     fi
-    cat "$INPUT_FILE" | /home/kali/go/bin/httpx -silent -> "$LIVE_SITES"
+    # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -silent -> "$LIVE_SITES"
+    # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -status-code -> "$LIVE_SITES"
+    # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -status-code -follow-redirects -j -> "$LIVE_SITES"
+    cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -j -> "$JSON_FORMAT"
+    # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -mc 200 -> "$LIVE200"
     if [[ $? -ne 0 ]]; then
         echo -e "${RED}[ERROR] Произошла ошибка при проверке сайтов.${NC}"
         exit 1
@@ -58,7 +64,10 @@ run_nuclei_scan() {
 main() {
     check_dependencies
     check_live_sites
-    run_nuclei_scan
+    # run_nuclei_scan
 }
 
 main
+
+
+#  сервер возвращает перенаправление (например, 302 Found), HTTPX автоматически следует этому редиректу и возвращает финальный URL после всех перенаправлений.
