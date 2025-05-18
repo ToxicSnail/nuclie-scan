@@ -41,15 +41,17 @@ status_check() {
   info "Status-code scan for URLs in '$INPUT_FILE'"
   [[ -f "$INPUT_FILE" ]] || err "File '$INPUT_FILE' not found."
 
-  if [[ ${#STATUS_CODES[@]} -gt 0 ]]; then
-    local codes_csv
-    codes_csv=$(IFS=,; echo "${STATUS_CODES[*]}")
-    info "Showing only codes: ${STATUS_CODES[*]}"
-    "$HTTPX_BIN" -list "$INPUT_FILE" -mc "$codes_csv"
-  else
-    info "Showing all status codes"
-    "$HTTPX_BIN" -list "$INPUT_FILE" -status-code
-  fi
+
+  cat "$INPUT_FILE" | httpx -status-code -> "$LIVE_SITES"
+  # if [[ ${#STATUS_CODES[@]} -gt 0 ]]; then
+  #   local codes_csv
+  #   codes_csv=$(IFS=,; echo "${STATUS_CODES[*]}")
+  #   info "Showing only codes: ${STATUS_CODES[*]}"
+  #   "$HTTPX_BIN" -list "$INPUT_FILE" -mc "$codes_csv"
+  # else
+  #   info "Showing all status codes"
+  #   "$HTTPX_BIN" -list "$INPUT_FILE" -status-code
+  # fi
 }
 
 check_live_sites() {
