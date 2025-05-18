@@ -21,7 +21,7 @@ check_dependencies() {
         echo -e "${RED}[ERROR] Nuclei не установлен. Установите его: https://nuclei.projectdiscovery.io/${NC}"
         exit 1
     fi
-    if ! command -v /home/kali_gorkij/go/bin/httpx &> /dev/null; then
+    if ! command -v httpx &> /dev/null; then
         echo -e "${RED}[ERROR] HTTPX не установлен. Установите его: https://github.com/projectdiscovery/httpx${NC}"
         exit 1
     fi
@@ -37,7 +37,7 @@ check_live_sites() {
     # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -silent -> "$LIVE_SITES"
     # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -status-code -> "$LIVE_SITES"
     # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -status-code -follow-redirects -j -> "$LIVE_SITES"
-    cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -j -> "$JSON_FORMAT"
+    cat "$INPUT_FILE" | httpx -j -> "$JSON_FORMAT"
     # cat "$INPUT_FILE" | /home/kali_gorkij/go/bin/httpx -mc 200 -> "$LIVE200"
     if [[ $? -ne 0 ]]; then
         echo -e "${RED}[ERROR] Произошла ошибка при проверке сайтов.${NC}"
