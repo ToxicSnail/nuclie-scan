@@ -2,7 +2,7 @@
 
 ## Назначение
 
-`scan.sh` — это простой Bash-скрипт, автоматизирующий две самые популярные операции:
+`endscaner.sh` — это простой Bash-скрипт, автоматизирующий две самые популярные операции:
 1. **Проверку доступности списка сайтов** с помощью [httpx](https://github.com/projectdiscovery/httpx) и фильтрацию по HTTP-кодам.
 2. **Запуск сканирования** найденных «живых» URL на уязвимости с помощью [nuclei](https://github.com/projectdiscovery/nuclei).
 
@@ -27,15 +27,15 @@ command -v httpx jq nuclei
 ## Установка скрипта
 1. Скопируйте содержимое в файл scan.sh:
 ```bash
-curl -o scan.sh https://…/scan.sh
+curl -o endscaner.sh https://…/endscaner.sh
 ```
 2. Сделайте файл исполняемым:
     ```bash
-    chmod +x scan.sh
+    chmod +x endscaner.sh
     ```
     **Важно**: убедитесь, что файл сохранён с Unix-окончаниями (LF), иначе запускайте через
     ```bash
-    bash scan.sh …
+    bash endscaner.sh …
     ```
 
 ## Структура папки результатов
@@ -53,7 +53,7 @@ reports/2125-05-18_14-30-00/
 ## Основной синтаксис
 
 ```bash
-./scan.sh [options]
+./endscaner.sh [options]
 ```
 Если не передавать ни одной опции, скрипт выполнит всё по порядку:
 1. Проверит зависимости (`httpx`, `jq`, `nuclei`)
@@ -79,25 +79,25 @@ reports/2125-05-18_14-30-00/
 
 1. Только проверка зависимостей
 ```bash
-./scan.sh --deps
+./endscaner.sh --deps
 ```
 2. Только статус-коды (все)
 ```bash
-./scan.sh --status
+./endscaner.sh --status
 ```
 3. Статус-коды, фильтрация 200 и 400
 ```bash
-./scan.sh --status --codes "200 400"
+./endscaner.sh --status --codes "200 400"
 ```
 4. Полный цикл с настройкой httpx
 ```bash
-./scan.sh --all \
+./endscaner.sh --all \
   --httpx "-timeout 10 -tls-grab" \
   --codes "200 301"
 ```
 5. Запуск nuclei после всех проверок
 ```bash
-./scan.sh --scan
+./endscaner.sh --scan
 ```
 
 ## Подсказка по входным данным
