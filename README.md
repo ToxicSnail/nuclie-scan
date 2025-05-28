@@ -1,110 +1,101 @@
-# Руководство по использованию `endscaner.sh`
+# HTTPX-Only Endscaner Script
 
-## Назначение
+**Branch:** `future/httpx`
 
-`endscaner.sh` — это простой Bash-скрипт, автоматизирующий две самые популярные операции:
-1. **Проверку доступности списка сайтов** с помощью [httpx](https://github.com/projectdiscovery/httpx) и фильтрацию по HTTP-кодам.
-2. **Запуск сканирования** найденных «живых» URL на уязвимости с помощью [nuclei](https://github.com/projectdiscovery/nuclei).
+Скрипт `endscaner.sh` предназначен для быстрого сканирования списка URL с помощью `httpx` и гибкой фильтрации по HTTP-кодам. Все результаты сохраняются в папке `reports/<timestamp>/`.
 
-Все артефакты (JSON-ответы, списки живых URL, результаты nuclei и логи) автоматически сохраняются в папке:
-```
-reports/<ГГГГ‐ММ‐ДД_ЧЧ‐ММ‐СС>/
-```
+---
 
-## Требования
+## Основные возможности
 
-- Linux / macOS с Bash / WSL 
-- Установленные утилиты:
-  - `httpx` (ProjectDiscovery CLI-версия, не Python-библиотека)  
-  - `jq` (для разбора JSON)  
-  - `nuclei` (CLI сканер шаблонов)  
+- **Проверка зависимостей**: `httpx`, `jq`.
+- **Сканирование статусов** всех URL из `sites_to_scan.txt`.
+- **Гибкая фильтрация**:
+  - **Whitelist**: вывод только URL с кодами из белого списка.
+  - **Blacklist**: вывод всех URL **кроме** тех, чьи коды указаны в чёрном списке.
+  - Если оба списка пусты — выводятся все URL.
+- **Сохранение**:
+  - Сырые JSON-данные из `httpx` → `reports/<TS>/httpx_<TS>.json`
+  - Окончательный список URL → `reports/<TS>/live_sites_<TS>.txt`
 
-Проверить наличие:
-```bash
-command -v httpx jq nuclei
-```
+---
 
-## Установка скрипта
-1. Скопируйте содержимое в файл scan.sh:
-```bash
-curl -o endscaner.sh https://…/endscaner.sh
-```
-2. Сделайте файл исполняемым:
-    ```bash
-    chmod +x endscaner.sh
-    ```
-    **Важно**: убедитесь, что файл сохранён с Unix-окончаниями (LF), иначе запускайте через
-    ```bash
-    bash endscaner.sh …
-    ```
+## Настройка
 
-## Структура папки результатов
+1. **Скрипт**: `endscaner.sh` в корне репозитория.
+2. **Список URL**: файл `sites_to_scan.txt` — по одному URL в строке (с `http://` и(или) `https://`).
+3. **Переменные в начале `endscaner.sh`**:
+   ```bash
+   INPUT_FILE="sites_to_scan.txt"        # входной файл URL
+   HTTPX_OPTS_DEFAULT=(-silent -follow-redirects -json -status-code)
 
-При каждом запуске скрипт создаёт каталог:
-```
-reports/2125-05-18_14-30-00/
-```
-и внутри генерирует:
-- `httpx_2025-05-18_14-30-00.json` — полный JSON-отчёт httpx
-- `live_sites_2025-05-18_14-30-00.txt` — перечень URL с согласованными кодами
-- `nuclei_2025-05-18_14-30-00.txt` — вывод nuclei
-- `scan_2025-05-18_14-30-00.log` — логи ошибок
+   # Поля JSON для фильтрации
+   PARSE_FIELD_DEFAULT="url"
+   JSON_FIELD_STATUS="status_code"
 
-## Основной синтаксис
+   # Белый список (whitelist)
+   WHITELIST_CODES_DEFAULT=(200 301)
+
+   # Чёрный список (blacklist)
+   BLACKLIST_CODES_DEFAULT=(404 500)
+   ```
+   - `WHITELIST_CODES_DEFAULT`: если не пуст, скрипт выведет *только* URL с этими кодами.
+   - `BLACKLIST_CODES_DEFAULT`: если `WHITELIST_CODES_DEFAULT` пуст, но `BLACKLIST_CODES_DEFAULT` не пуст, выведутся **все URL, кроме** указанных кодов.
+   - Если оба массива пусты — выводятся все URL.
+
+---
+
+## Установка зависимостей
 
 ```bash
-./endscaner.sh [options]
+sudo apt update
+sudo apt install -y httpx jq
 ```
-Если не передавать ни одной опции, скрипт выполнит всё по порядку:
-1. Проверит зависимости (`httpx`, `jq`, `nuclei`)
-2. Выведет статус-коды (опция `--status`)
-3. Соберёт JSON и отфильтрует URL (опция `--check`)
-4. Запустит nuclei (`--scan`)
 
-## Опции
+*Для `httpx` используйте CLI-версию ProjectDiscovery, а не Python-библиотеку.*
 
-| Ключ                          | Описание                                                                         |
-| ----------------------------- | -------------------------------------------------------------------------------- |
-| `--deps`                      | Только проверка зависимостей                                                     |
-| `--status`                    | Выводит в консоль каждый URL и его HTTP-код (из `sites_to_scan.txt`)             |
-| `--check`                     | `httpx … -json` + фильтрация по кодам → `live_sites_<ts>.txt`                    |
-| `--scan`                      | `nuclei -l live_sites_<ts>.txt → nuclei_<ts>.txt`                                |
-| `--all`                       | `--deps` + `--status` + `--check` + `--scan` (по умолчанию при отсутствии опций) |
-| `--httpx "<opts>"`            | Передать доп. флаги в httpx (например: `"-timeout 5 -tls-grab"`)                 |
-| `--codes "<code1> <code2> …"` | Список HTTP-кодoв для фильтрации (пример: `"200 301 302 400"`)                   |
-| `-h`, `--help`                | Показать это сообщение                                                           |
+---
 
+## Запуск
 
-## Примеры
-
-1. Только проверка зависимостей
 ```bash
-./endscaner.sh --deps
-```
-2. Только статус-коды (все)
-```bash
-./endscaner.sh --status
-```
-3. Статус-коды, фильтрация 200 и 400
-```bash
-./endscaner.sh --status --codes "200 400"
-```
-4. Полный цикл с настройкой httpx
-```bash
-./endscaner.sh --all \
-  --httpx "-timeout 10 -tls-grab" \
-  --codes "200 301"
-```
-5. Запуск nuclei после всех проверок
-```bash
-./endscaner.sh --scan
+chmod +x endscaner.sh
+./endscaner.sh
 ```
 
-## Подсказка по входным данным
+### Примеры
 
-Список URL для сканирования указывайте в файле `sites_to_scan.txt` (по одной записи в строке):
-```txt
-https://example.com
-http://test.local
-...
+- **Только 200 OK и 301** (whitelist):
+  ```bash
+  # В endscaner.sh: 
+  # WHITELIST_CODES_DEFAULT=(200 301)
+  ./endscaner.sh
+  ```
+
+- **Все, кроме 404 и 500** (blacklist):
+  ```bash
+  # В endscaner.sh: 
+  # WHITELIST_CODES_DEFAULT=()
+  # BLACKLIST_CODES_DEFAULT=(404 500)
+  ./endscaner.sh
+  ```
+
+- **Все статусы (без фильтрации)**:
+  ```bash
+  # Оставить оба списка пустыми
+  ./endscaner.sh
+  ```
+
+---
+
+После выполнения результаты окажутся в папке:
+
 ```
+reports/2025-05-27_12-34-56/
+├── httpx_2025-05-27_12-34-56.json   # полный JSON-ответ httpx
+└── live_sites_2025-05-27_12-34-56.txt  # отфильтрованный список URL
+```
+
+---
+
+*Конфигурация скрипта находится в начале файла `endscaner.sh` — просто правьте массивы whitelist/blacklist и опции `httpx` под свои задачи.*
