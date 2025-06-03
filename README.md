@@ -1,52 +1,31 @@
-# HTTPX-Only Endscaner Script
+# Руководство по использованию `endscaner.sh`
 
-**Branch:** `future/httpx`
+## Назначение
 
-Скрипт `endscaner.sh` предназначен для быстрого сканирования списка URL с помощью `httpx` и гибкой фильтрации по HTTP-кодам. Все результаты сохраняются в папке `reports/<timestamp>/`.
+`endscaner.sh` — это простой Bash-скрипт, автоматизирующий две самые популярные операции:
+1. **Проверку доступности списка сайтов** с помощью [httpx](https://github.com/projectdiscovery/httpx) и фильтрацию по HTTP-кодам.
+2. **Запуск сканирования** найденных «живых» URL на уязвимости с помощью [nuclei](https://github.com/projectdiscovery/nuclei).
 
----
+Все артефакты (JSON-ответы, списки живых URL, результаты nuclei и логи) автоматически сохраняются в папке:
+```
+reports/<ГГГГ‐ММ‐ДД_ЧЧ‐ММ‐СС>/
+```
 
-## Основные возможности
+## Требования
 
-- **Проверка зависимостей**: `httpx`, `jq`.
-- **Сканирование статусов** всех URL из `sites_to_scan.txt`.
-- **Гибкая фильтрация**:
-  - **Whitelist**: вывод только URL с кодами из белого списка.
-  - **Blacklist**: вывод всех URL **кроме** тех, чьи коды указаны в чёрном списке.
-  - Если оба списка пусты — выводятся все URL.
-- **Сохранение**:
-  - Сырые JSON-данные из `httpx` → `reports/<TS>/httpx_<TS>.json`
-  - Окончательный список URL → `reports/<TS>/live_sites_<TS>.txt`
+- Linux / macOS с Bash / WSL 
+- Установленные утилиты:
+  - `httpx` (ProjectDiscovery CLI-версия, не Python-библиотека)  
+  - `jq` (для разбора JSON)  
+  - `nuclei` (CLI сканер шаблонов)  
 
----
+Проверить наличие:
+```bash
+command -v httpx jq nuclei
+```
 
-## Настройка
-
-1. **Скрипт**: `endscaner.sh` в корне репозитория.
-2. **Список URL**: файл `sites_to_scan.txt` — по одному URL в строке (с `http://` и(или) `https://`).
-3. **Переменные в начале `endscaner.sh`**:
-   ```bash
-   INPUT_FILE="sites_to_scan.txt"        # входной файл URL
-   HTTPX_OPTS_DEFAULT=(-silent -follow-redirects -json -status-code)
-
-   # Поля JSON для фильтрации
-   PARSE_FIELD_DEFAULT="url"
-   JSON_FIELD_STATUS="status_code"
-
-   # Белый список (whitelist)
-   WHITELIST_CODES_DEFAULT=(200 301)
-
-   # Чёрный список (blacklist)
-   BLACKLIST_CODES_DEFAULT=(404 500)
-   ```
-   - `WHITELIST_CODES_DEFAULT`: если не пуст, скрипт выведет *только* URL с этими кодами.
-   - `BLACKLIST_CODES_DEFAULT`: если `WHITELIST_CODES_DEFAULT` пуст, но `BLACKLIST_CODES_DEFAULT` не пуст, выведутся **все URL, кроме** указанных кодов.
-   - Если оба массива пусты — выводятся все URL.
-
----
-
-## Установка зависимостей
-
+## Установка скрипта
+1. Скопируйте содержимое в файл scan.sh:
 ```bash
 sudo apt update
 sudo apt install -y httpx jq
