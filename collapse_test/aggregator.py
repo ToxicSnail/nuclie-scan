@@ -4,6 +4,7 @@ import sys
 
 from pathlib import Path
 
+QUIET = os.getenv("QUIET", "0") == "1"
 RAW_DIR = None  # для скана последней папки
 # RAW_DIR = Path("reports/2025-06-03_23-04-25/raw") # Для скана опред папки
 
